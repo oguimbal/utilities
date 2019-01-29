@@ -1,6 +1,5 @@
 
 
-
 export function copyWithFunctions(obj, removeFunctions?: boolean) {
     if (!obj)
         return obj;
@@ -82,7 +81,6 @@ export function copy<TDest>(source: Partial<TDest>, destination: TDest, ...onlyP
 }
 
 
-
 export function resetTo(objToReset, source){
     for (const o in objToReset)
         delete objToReset[o];
@@ -118,3 +116,33 @@ export function graphMatches(item: any, val: string) {
     }
     return m(item, 0);
 }
+
+
+/**
+ * Returns a copy of 'options', augmented with 'defaults' keys that were not in options 
+ */
+export function mergeOptions<T extends Object>(options: Partial<T>, defaults: T): T {
+    const ret: T = {...<any>(options || {})};
+    for (const k of Object.keys(defaults)) {
+        if (k in ret)
+            continue;
+        ret[k] = defaults[k];
+    }
+    return ret;
+}
+
+
+
+
+/** Returns 'true' if all the properties in 'partial' are equal to the same properties on 'source' */
+export function partialEqual<T>(source: T, partial: Partial<T>) {
+    for (const k in partial) {
+        if (!(k in partial))
+            continue;
+        if (source[k] !== partial[k])
+            return false;
+    }
+    return true;
+}
+
+

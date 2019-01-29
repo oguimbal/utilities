@@ -22,6 +22,29 @@ export function toDictionary<T>(array: T[], groupOn: (elt: T) => string) {
     return ret;
 }
 
+export function toDictionarySelect<T, TRet>(array: T[], groupOn: (elt: T) => string, select: ((elt: T) => TRet)) {
+    const ret: {[key: string]: TRet} = {};
+    for (const e of array) {
+        const key = groupOn(e);
+        if (ret[key])
+            throw new Error('Duplicate key: ' + key)
+        ret[key] = select(e);
+    }
+    return ret;
+}
+
+
+export function toLookup<T>(array: T[], groupOn: (elt: T) => string) {
+    const ret: {[key: string]: T[]} = {};
+    for (const e of array) {
+        const key = groupOn(e);
+        if (ret[key])
+            ret[key].push(e)
+        else
+            ret[key] = [e];
+    }
+    return ret;
+}
 
 export function unique<T>(array: T[], compareOn: ((elt: T) => any) = x => x): T[] {
     const has: any = {};
@@ -62,4 +85,28 @@ export function range(start = 0, end = 0, step = 1) {
         ? Array.from({length}, (value, key) => start - key * step)
         : Array.from({length}, (value, key) => start + key * step);
 
+}
+
+export const Iterable = {
+    *take<T>(iterable: Iterable<T>, length: number): IterableIterator<T> {
+        const iterator = iterable[Symbol.iterator]();
+        while (length-- > 0) {
+            const {done, value} = iterator.next();
+            if (done)
+                break;
+            yield value;
+        }
+    },
+    
+    count<T>(iterable: Iterable<T>, limit?: number): number {
+        const iterator = iterable[Symbol.iterator]();
+        limit = 99999;
+        let cnt = 0;
+        while (true) {
+            if (iterator.next().done)
+                break;
+            cnt ++;
+        }
+        return cnt;
+    }
 }
