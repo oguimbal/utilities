@@ -97,7 +97,6 @@ export const Iterable = {
             yield value;
         }
     },
-    
     count<T>(iterable: Iterable<T>, limit?: number): number {
         const iterator = iterable[Symbol.iterator]();
         limit = 99999;
@@ -108,5 +107,33 @@ export const Iterable = {
             cnt ++;
         }
         return cnt;
+    },
+    first<T>(iterable: Iterable<T>): T {
+        const iterator = iterable[Symbol.iterator]();
+        const {done, value} = iterator.next();
+        if (done)
+            throw new Error('Set is empty');
+        return value;
+    },
+    
+    firstOrDefault<T>(iterable: Iterable<T>): T {
+        const iterator = iterable[Symbol.iterator]();
+        const {value} = iterator.next();
+        return value;
+    },
+    *map<T, TRet>(iterable: Iterable<T>, map: (item: T, index?: number) => TRet): Iterable<TRet> {
+        let i = 0;
+        for (const k of iterable) {
+            yield map(k, i);
+            i ++;
+        }
+    },
+    *filter<T>(iterable: Iterable<T>, where: (item: T, index?: number) => boolean): Iterable<T> {
+        let i = 0;
+        for (const k of iterable) {
+            if (where(k, i))
+                yield k;
+            i ++;
+        }
     }
 }
