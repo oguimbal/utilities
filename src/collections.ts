@@ -214,6 +214,7 @@ export class Linq<T> implements Iterable<T> {
     [Symbol.iterator]: () => Iterator<T>;
 
     constructor(private subject: Iterable<T>) {
+        subject = subject || [];
         this[Symbol.iterator] = subject[Symbol.iterator].bind(subject);
     }
     
@@ -336,6 +337,8 @@ export class Linq<T> implements Iterable<T> {
     
 
     concat<TOther>(other: Iterable<TOther>) {
+        if (!other)
+            return this;
         const _this = this;
         function* gen() {
             for (const t of _this)
@@ -357,6 +360,8 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
 
     constructor(private subject: AsyncIterable<T>) {
         this[Symbol.asyncIterator] = subject[Symbol.asyncIterator].bind(subject);
+        if (!(this[Symbol.asyncIterator]))
+            this[Symbol.asyncIterator] = (async function*(){});
     }
     
     take(length: number): AsyncLinq<T> {
@@ -466,6 +471,8 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
 
 
     concat<TOther>(other: Iterable<TOther> | AsyncIterable<TOther>) {
+        if (!other)
+            return this;
         const _this = this;
         async function* gen() {
             for await(const t of _this)
