@@ -6,7 +6,7 @@
   "types": "bin/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "test": "mocha -r ts-node/register test/**/*-spec.ts",
+    "test": "mocha --harmony-async-iteration  -r ts-node/register test/**/*-spec.ts",
     "publish-please": "npm run build && publish-please",
     "prepublishOnly": "publish-please guard"
   },
