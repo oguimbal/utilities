@@ -195,14 +195,14 @@ export const Iterable = {
     },
     *selectMany<T, TRet>(iterable: Iterable<T>, select: (item: T) => Iterable<TRet>): Iterable<TRet> {
         for (const o of iterable) {
-            for (const i of select(o)) {
+            for (const i of (select(o) || [])) {
                 yield i;
             }
         }
     },
     async *selectManyAsync<T, TRet>(iterable: AsyncIterable<T>, select: (item: T) => Iterable<TRet>): AsyncIterable<TRet> {
         for await(const o of iterable) {
-            for (const i of select(o)) {
+            for (const i of (select(o) || [])) {
                 yield i;
             }
         }
