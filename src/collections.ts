@@ -135,5 +135,62 @@ export const Iterable = {
                 yield k;
             i ++;
         }
+    },
+    *unwrap<T>(iterable: Iterable<Iterable<T>>): Iterable<T> {
+        for (const o of iterable) {
+            for (const i of o) {
+                yield i;
+            }
+        }
+    },
+    *selectMany<T, TRet>(iterable: Iterable<T>, select: (item: T) => Iterable<TRet>): Iterable<TRet> {
+        for (const o of iterable) {
+            for (const i of select(o)) {
+                yield i;
+            }
+        }
+    },
+    *notNull<T>(iterable: Iterable<T>): Iterable<T> {
+
+    }
+}
+
+export class Linq<T> implements Iterable<T> {
+    [Symbol.iterator]: () => Iterator<T>;
+
+    constructor(private subject: Iterable<T>) {
+        this[Symbol.iterator] = subject[Symbol.iterator].bind(subject);
+    }
+    
+    take(length: number): Linq<T> {
+        return new Linq(Iterable.take(this.subject, length));
+    }
+
+    count(limit?: number): number {
+        return Iterable.count(this.subject, limit);
+    }
+
+    first(): T {
+        return Iterable.first(this.subject);
+    }
+    
+    firstOrDefault(): T {
+        return Iterable.firstOrDefault(this.subject);
+    }
+
+    map<TRet>(map: (item: T, index?: number) => TRet): Linq<TRet> {
+        return new Linq(Iterable.map(this.subject, map));
+    }
+
+    filter(where: (item: T, index?: number) => boolean): Linq<T> {
+        return new Linq(Iterable.filter(this.subject, where));
+    }
+
+    selectMany<TRet>(selector: (item: T) => TRet[]): Linq<TRet> {
+        return new Linq(Iterable.selectMany(this.subject, selector));
+    }
+
+    notDefault(iterable: Iterable<T>): Linq<T> {
+        return new Linq(Iterable.filter(this.subject, x => !x));
     }
 }
