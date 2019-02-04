@@ -335,7 +335,7 @@ export class Linq<T> implements Iterable<T> {
     }
     
 
-    concat(other: Iterable<T>) {
+    concat<TOther>(other: Iterable<TOther>) {
         const _this = this;
         function* gen() {
             for (const t of _this)
@@ -465,7 +465,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     }
 
 
-    concat(other: Iterable<T> | AsyncIterable<T>) {
+    concat<TOther>(other: Iterable<TOther> | AsyncIterable<TOther>) {
         const _this = this;
         async function* gen() {
             for await(const t of _this)
