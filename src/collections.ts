@@ -370,7 +370,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
             [Symbol.asyncIterator]: async function*() {
                 let i = 0;
                 for await(const k of _this) {
-                    if (where(k, i))
+                    if (await where(k, i))
                         yield k;
                     i ++;
                 }

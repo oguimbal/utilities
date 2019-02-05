@@ -29,9 +29,19 @@ describe('Async Linq', () => {
         expect(await ret.toArray()).to.deep.equal([1, 2, 3, 4]);
     });
 
-    it('select', async () => {
+    it('map', async () => {
         const ret = async({a: 1}, {a: 2})
             .map(x => x.a)
+        expect(await ret.toArray()).to.deep.equal([1, 2]);
+        expect(await ret.toArray()).to.deep.equal([1, 2]);
+    })
+    
+    it('map async', async () => {
+        const ret = async({a: 1}, {a: 2})
+            .map(async x => {
+                await delay(1);
+                return x.a;
+            })
         expect(await ret.toArray()).to.deep.equal([1, 2]);
         expect(await ret.toArray()).to.deep.equal([1, 2]);
     })
@@ -55,6 +65,18 @@ describe('Async Linq', () => {
         expect(await ret.toArray()).to.deep.equal([2, 3]);
         expect(await ret.toArray()).to.deep.equal([2, 3]);
     })
+    
+    it('filter async', async () => {
+        const ret = async({a: 1}, {a: 2}, {a: 3})
+            .filter(async x => {
+                await delay(1);
+                return x.a >= 2;
+            })
+            .map(x => x.a);
+        expect(await ret.toArray()).to.deep.equal([2, 3]);
+        expect(await ret.toArray()).to.deep.equal([2, 3]);
+    })
+
 
     
     it('concat async', async () => {
