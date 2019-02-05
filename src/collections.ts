@@ -89,120 +89,9 @@ export function range(start = 0, end = 0, step = 1) {
 }
 const IT_LIMIT = 100000;
 export const Iterable = {
-    *take<T>(iterable: Iterable<T>, length: number): IterableIterator<T> {
-        const iterator = iterable[Symbol.iterator]();
-        while (length-- > 0) {
-            const {done, value} = iterator.next();
-            if (done)
-                break;
-            yield value;
-        }
-    },
-    async *takeAsync<T>(iterable: AsyncIterable<T>, length: number): AsyncIterableIterator<T> {
-        const iterator = iterable[Symbol.asyncIterator]();
-        while (length-- > 0) {
-            const {done, value} = await iterator.next();
-            if (done)
-                break;
-            yield value;
-        }
-    },
-    count<T>(iterable: Iterable<T>, limit?: number): number {
-        const iterator = iterable[Symbol.iterator]();
-        limit = IT_LIMIT;
-        let cnt = 0;
-        while (true) {
-            if (iterator.next().done)
-                break;
-            cnt ++;
-        }
-        return cnt;
-    },
-    async countAsync<T>(iterable: AsyncIterable<T>, limit?: number): Promise<number> {
-        const iterator = iterable[Symbol.asyncIterator]();
-        limit = IT_LIMIT;
-        let cnt = 0;
-        while (true) {
-            if ((await iterator.next()).done)
-                break;
-            cnt ++;
-        }
-        return cnt;
-    },
-    first<T>(iterable: Iterable<T>): T {
-        const iterator = iterable[Symbol.iterator]();
-        const {done, value} = iterator.next();
-        if (done)
-            throw new Error('Set is empty');
-        return value;
-    },
-    async firstAsync<T>(iterable: AsyncIterable<T>): Promise<T> {
-        const iterator = iterable[Symbol.asyncIterator]();
-        const {done, value} = await iterator.next();
-        if (done)
-            throw new Error('Set is empty');
-        return value;
-    },
-    
-    firstOrDefault<T>(iterable: Iterable<T>): T {
-        const iterator = iterable[Symbol.iterator]();
-        const {value} = iterator.next();
-        return value;
-    },
-    
-    async firstOrDefaultAsync<T>(iterable: AsyncIterable<T>): Promise<T> {
-        const iterator = iterable[Symbol.asyncIterator]();
-        const {value} = await iterator.next();
-        return value;
-    },
-    
-    *map<T, TRet>(iterable: Iterable<T>, map: (item: T, index?: number) => TRet): Iterable<TRet> {
-        let i = 0;
-        for (const k of iterable) {
-            yield map(k, i);
-            i ++;
-        }
-    },
-    async *mapAsync<T, TRet>(iterable: AsyncIterable<T>, map: (item: T, index?: number) => (TRet | Promise<TRet>)): AsyncIterable<TRet> {
-        let i = 0;
-        for await(const k of iterable) {
-            yield await map(k, i);
-            i ++;
-        }
-    },
-    *filter<T>(iterable: Iterable<T>, where: (item: T, index?: number) => boolean): Iterable<T> {
-        let i = 0;
-        for (const k of iterable) {
-            if (where(k, i))
-                yield k;
-            i ++;
-        }
-    },
-    async *filterAsync<T>(iterable: AsyncIterable<T>, where: (item: T, index?: number) => (boolean | Promise<boolean>)): AsyncIterable<T> {
-        let i = 0;
-        for await(const k of iterable) {
-            if (where(k, i))
-                yield k;
-            i ++;
-        }
-    },
     *unwrap<T>(iterable: Iterable<Iterable<T>>): Iterable<T> {
         for (const o of iterable) {
             for (const i of o) {
-                yield i;
-            }
-        }
-    },
-    *selectMany<T, TRet>(iterable: Iterable<T>, select: (item: T) => Iterable<TRet>): Iterable<TRet> {
-        for (const o of iterable) {
-            for (const i of (select(o) || [])) {
-                yield i;
-            }
-        }
-    },
-    async *selectManyAsync<T, TRet>(iterable: AsyncIterable<T>, select: (item: T) => Iterable<TRet>): AsyncIterable<TRet> {
-        for await(const o of iterable) {
-            for (const i of (select(o) || [])) {
                 yield i;
             }
         }
@@ -219,35 +108,89 @@ export class Linq<T> implements Iterable<T> {
     }
     
     take(length: number): Linq<T> {
-        return new Linq(Iterable.take(this.subject, length));
+        const _this = this;
+        return new Linq({
+            [Symbol.iterator]: function*() {
+                const iterator = _this[Symbol.iterator]();
+                while (length-- > 0) {
+                    const {done, value} = iterator.next();
+                    if (done)
+                        break;
+                    yield value;
+                }
+            }
+        });
     }
 
     count(limit?: number): number {
-        return Iterable.count(this.subject, limit > 0 ? limit : IT_LIMIT);
+        const iterator = this[Symbol.iterator]();
+        limit = IT_LIMIT;
+        let cnt = 0;
+        while (true) {
+            if (iterator.next().done)
+                break;
+            if (cnt ++ > limit)
+                return;
+        }
+        return cnt;
     }
 
     first(): T {
-        return Iterable.first(this.subject);
+        const iterator = this[Symbol.iterator]();
+        const {done, value} = iterator.next();
+        if (done)
+            throw new Error('Set is empty');
+        return value;
     }
     
     firstOrDefault(): T {
-        return Iterable.firstOrDefault(this.subject);
+        const iterator = this[Symbol.iterator]();
+        const {value} = iterator.next();
+        return value;
     }
 
     map<TRet>(map: (item: T, index?: number) => TRet): Linq<TRet> {
-        return new Linq(Iterable.map(this.subject, map));
+        const _this = this;
+        return new Linq({
+            [Symbol.iterator]: function*() {
+                let i = 0;
+                for (const k of _this) {
+                    yield map(k, i);
+                    i ++;
+                }
+            }
+        });
     }
 
     filter(where: (item: T, index?: number) => boolean): Linq<T> {
-        return new Linq(Iterable.filter(this.subject, where));
+        const _this = this;
+        return new Linq({
+            [Symbol.iterator]: function*() {
+                let i = 0;
+                for (const k of _this) {
+                    if (where(k, i))
+                        yield k;
+                    i ++;
+                }
+            }
+        });
     }
 
     selectMany<TRet>(selector: (item: T) => TRet[]): Linq<TRet> {
-        return new Linq(Iterable.selectMany(this.subject, selector));
+        const _this = this;
+        return new Linq({
+            [Symbol.iterator]: function*() {
+                for (const o of _this) {
+                    for (const i of (selector(o) || [])) {
+                        yield i;
+                    }
+                }
+            }
+        });
     }
 
     notDefault(): Linq<T> {
-        return new Linq(Iterable.filter(this.subject, x => !x));
+        return this.filter(x => !x);
     }
 
     toDictionary(groupOn: (item: T) => string, onCollision?: (a: T, b: T, key?: string) => T) {
@@ -358,42 +301,99 @@ const LIMIT = 100000;
 export class AsyncLinq<T> implements AsyncIterable<T> {
     [Symbol.asyncIterator]: () => AsyncIterator<T>;
 
-    constructor(private subject: AsyncIterable<T>) {
-        this[Symbol.asyncIterator] = subject[Symbol.asyncIterator].bind(subject);
+    private enumerate() {
+        return this._subject[Symbol.asyncIterator]();
+    }
+
+    constructor(private _subject: AsyncIterable<T>) {
+        this[Symbol.asyncIterator] = this.enumerate.bind(this);
         if (!(this[Symbol.asyncIterator]))
             this[Symbol.asyncIterator] = (async function*(){});
     }
     
     take(length: number): AsyncLinq<T> {
-        return new AsyncLinq(Iterable.takeAsync(this.subject, length));
+        const _this = this;
+        return new AsyncLinq({
+            [Symbol.asyncIterator]: async function*() {
+                const iterator = _this[Symbol.asyncIterator]();
+                while (length-- > 0) {
+                    const {done, value} = await iterator.next();
+                    if (done)
+                        break;
+                    yield value;
+                }
+            }
+        });
     }
 
-    count(limit?: number): Promise<number> {
-        return Iterable.countAsync(this.subject, limit > 0 ? limit : IT_LIMIT);
+    async count(limit?: number): Promise<number> {
+        const iterator = this[Symbol.asyncIterator]();
+        limit = IT_LIMIT;
+        let cnt = 0;
+        while (true) {
+            if ((await iterator.next()).done)
+                break;
+            cnt ++;
+        }
+        return cnt;
     }
 
-    first(): Promise<T> {
-        return Iterable.firstAsync(this.subject);
+    async first(): Promise<T> {
+        const iterator = this[Symbol.asyncIterator]();
+        const {done, value} = await iterator.next();
+        if (done)
+            throw new Error('Set is empty');
+        return value;
     }
     
-    firstOrDefault(): Promise<T> {
-        return Iterable.firstOrDefaultAsync(this.subject);
+    async firstOrDefault(): Promise<T> {
+        const iterator = this[Symbol.asyncIterator]();
+        const {value} = await iterator.next();
+        return value;
     }
 
     map<TRet>(map: (item: T, index?: number) => TRet): AsyncLinq<TRet> {
-        return new AsyncLinq(Iterable.mapAsync(this.subject, map));
+        const _this = this;
+        return new AsyncLinq({
+            [Symbol.asyncIterator]: async function*() {
+                let i = 0;
+                for await(const k of _this) {
+                    yield await map(k, i);
+                    i ++;
+                }
+            }
+        });
     }
 
-    filter(where: (item: T, index?: number) => boolean): AsyncLinq<T> {
-        return new AsyncLinq(Iterable.filterAsync(this.subject, where));
+    filter(where: (item: T, index?: number) => (boolean | Promise<boolean>)): AsyncLinq<T> {
+        const _this = this;
+        return new AsyncLinq({
+            [Symbol.asyncIterator]: async function*() {
+                let i = 0;
+                for await(const k of _this) {
+                    if (where(k, i))
+                        yield k;
+                    i ++;
+                }
+            }
+        });
     }
 
-    selectMany<TRet>(selector: (item: T) => TRet[]): AsyncLinq<TRet> {
-        return new AsyncLinq(Iterable.selectManyAsync(this.subject, selector));
+    selectMany<TRet>(select: (item: T) => TRet[]): AsyncLinq<TRet> {
+        const _this = this;
+        return new AsyncLinq({
+            [Symbol.asyncIterator]:  async function* () {
+                for await(const o of _this) {
+                    for (const i of (select(o) || [])) {
+                        yield i;
+                    }
+                }
+            }
+        });
     }
 
     notDefault(): AsyncLinq<T> {
-        return new AsyncLinq(Iterable.filterAsync(this.subject, x => !x));
+        return this.filter(x => !x);
     }
 
     toDictionary(groupOn: (item: T) => string, onCollision?: (a: T, b: T, key?: string) => T) {
@@ -403,7 +403,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     async toDictionarySelect<TRet>(groupOn: (item: T) => (string | Promise<string>), select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: string) => TRet): Promise<{[key: string]: TRet}> {
         const ret: {[key: string]: TRet} = {};
         let i = 0;
-        for await(const e of this.subject) {
+        for await(const e of this) {
             const key = await groupOn(e);
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
@@ -424,7 +424,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     async toMapSelect<TKey, TRet>(groupOn: (item: T) => (TKey | Promise<TKey>), select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: TKey) => TRet): Promise<Map<TKey, TRet>> {
         const ret = new Map<TKey, TRet>();
         let i = 0;
-        for await(const e of this.subject) {
+        for await(const e of this) {
             const key = await groupOn(e);
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
@@ -441,7 +441,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     async toArray(): Promise<T[]> {
         let i = 0;
         const ret: T[] = [];
-        for await(const e of this.subject) {
+        for await(const e of this) {
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
             ret.push(e);
@@ -457,7 +457,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     async toLookupSelect<TKey, TRet>(groupOn: (elt: T) => (TKey | Promise<TKey>), select: (elt: T) => TRet): Promise<Map<TKey, TRet[]>> {
         const ret = new Map<TKey, TRet[]>();
         let i = 0;
-        for await(const e of this.subject) {
+        for await(const e of this) {
             const key = await groupOn(e);
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
@@ -474,12 +474,13 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
         if (!other)
             return this;
         const _this = this;
-        async function* gen() {
-            for await(const t of _this)
-                yield t;
-            for await (const t of other)
-                yield t;
-        }
-        return new AsyncLinq(gen());
+        return new AsyncLinq({
+            [Symbol.asyncIterator]: async function*() {
+                for await(const t of _this)
+                    yield t;
+                for await (const t of other)
+                    yield t;
+            }
+        });
     }
 }
