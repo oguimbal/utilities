@@ -7,50 +7,51 @@ import { Linq } from '../src';
 describe('Linq', () => {
 
     it('can run twice', () => {
-        const ret = Array.from(new Linq([[1, 2], [3, 4]])
-            .selectMany(x => x));
-        expect(ret).to.deep.equal([1, 2, 3, 4]);
-        expect(ret).to.deep.equal([1, 2, 3, 4]);
+        const ret = new Linq([[1, 2], [3, 4]])
+            .selectMany(x => x);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3, 4]);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3, 4]);
     });
 
     it('select many', () => {
-        const ret = Array.from(new Linq([[1, 2], [3, 4]])
-            .selectMany(x => x));
-        expect(ret).to.deep.equal([1, 2, 3, 4]);
+        const ret = new Linq([[1, 2], [3, 4]])
+            .selectMany(x => x);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3, 4]);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3, 4]);
     });
 
     it('select', () => {
-        const ret = Array.from(new Linq([{a: 1}, {a: 2}])
-            .map(x => x.a));
-        expect(ret).to.deep.equal([1, 2]);
+        const ret = new Linq([{a: 1}, {a: 2}])
+            .map(x => x.a);
+        expect(ret.toArray()).to.deep.equal([1, 2]);
+        expect(ret.toArray()).to.deep.equal([1, 2]);
     })
 
     it('first', () => {
         const ret = new Linq([{a: 1}, {a: 2}])
-            .first();
-        expect(ret).to.deep.equal({a: 1});
+        expect(ret.first()).to.deep.equal({a: 1});
+        expect(ret.first()).to.deep.equal({a: 1});
     });
 
     it('count', () => {
         const ret = new Linq([{a: 1}, {a: 2}])
-            .count();
-        expect(ret).to.deep.equal(2);
+        expect(ret.count()).to.deep.equal(2);
+        expect(ret.count()).to.deep.equal(2);
     });
     
     it('filter', () => {
-        const ret = Array.from(new Linq([{a: 1}, {a: 2}, {a: 3}])
-            .filter(x => x.a >= 2))
+        const ret = new Linq([{a: 1}, {a: 2}, {a: 3}])
+            .filter(x => x.a >= 2)
             .map(x => x.a)
-        expect(ret).to.deep.equal([2, 3]);
+        expect(ret.toArray()).to.deep.equal([2, 3]);
+        expect(ret.toArray()).to.deep.equal([2, 3]);
     })
     
     
     it('concat', () => {
-        const ret = Array.from(new Linq([{a: 1}, {a: 2}, {a: 3}])
-            .concat(new Linq([{ a: 4}, {a: 5}]))
-            .filter(x => x.a >= 2))
-            .map(x => x.a)
-        expect(ret).to.deep.equal([2, 3, 4, 5]);
-        expect(ret).to.deep.equal([2, 3, 4, 5]);
+        const ret = new Linq([1, 2, 3])
+            .concat(new Linq([4, 5]));
+        expect(ret.toArray()).to.deep.equal([1, 2, 3, 4, 5]);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3, 4, 5]);
     })
 });

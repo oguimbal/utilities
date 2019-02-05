@@ -102,9 +102,9 @@ export const Iterable = {
 export class Linq<T> implements Iterable<T> {
     [Symbol.iterator]: () => Iterator<T>;
 
-    constructor(private subject: Iterable<T>) {
-        subject = subject || [];
-        this[Symbol.iterator] = subject[Symbol.iterator].bind(subject);
+    constructor(_subject: Iterable<T>) {
+        _subject = _subject || [];
+        this[Symbol.iterator] = _subject[Symbol.iterator].bind(_subject);
     }
     
     take(length: number): Linq<T> {
@@ -200,7 +200,7 @@ export class Linq<T> implements Iterable<T> {
     toDictionarySelect<TRet>(groupOn: (item: T) => string, select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: string) => TRet): {[key: string]: TRet} {
         const ret: {[key: string]: TRet} = {};
         let i = 0;
-        for (const e of this.subject) {
+        for (const e of this) {
             const key = groupOn(e);
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
@@ -221,7 +221,7 @@ export class Linq<T> implements Iterable<T> {
     toMapSelect<TKey, TRet>(groupOn: (item: T) => TKey, select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: TKey) => TRet): Map<TKey, TRet> {
         const ret = new Map<TKey, TRet>();
         let i = 0;
-        for (const e of this.subject) {
+        for (const e of this) {
             const key = groupOn(e);
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
@@ -237,10 +237,10 @@ export class Linq<T> implements Iterable<T> {
 
     toArray(unsafe?: boolean): T[] {
         if (unsafe)
-            return Array.from(this.subject);
+            return Array.from(this);
         let i = 0;
         const ret: T[] = [];
-        for (const e of this.subject) {
+        for (const e of this) {
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
             ret.push(e);
@@ -256,7 +256,7 @@ export class Linq<T> implements Iterable<T> {
     toLookupSelect<TKey, TRet>(groupOn: (elt: T) => TKey, select: (elt: T) => TRet): Map<TKey, TRet[]> {
         const ret = new Map<TKey, TRet[]>();
         let i = 0;
-        for (const e of this.subject) {
+        for (const e of this) {
             const key = groupOn(e);
             if (i++ > IT_LIMIT)
                 throw new Error('Capacity error');
@@ -270,12 +270,13 @@ export class Linq<T> implements Iterable<T> {
 
     toAsync(): AsyncLinq<T> {
         const _this = this;
-        async function* gen() {
-            for (const i of _this.subject)
-                yield i;
-        }
 // tslint:disable-next-line: no-use-before-declare
-        return new AsyncLinq(gen());
+        return new AsyncLinq({
+            [Symbol.asyncIterator]:  async function* () {
+                for (const i of _this)
+                    yield i;
+            }
+        });
     }
     
 
@@ -283,14 +284,15 @@ export class Linq<T> implements Iterable<T> {
         if (!other)
             return this;
         const _this = this;
-        function* gen() {
-            for (const t of _this)
-                yield t;
-            for (const t of other)
-                yield t;
-        }
 // tslint:disable-next-line: no-use-before-declare
-        return new Linq(gen());
+        return new Linq({
+            [Symbol.iterator]:  function* () {
+                for (const t of _this)
+                    yield t;
+                for (const t of other)
+                    yield t;
+            }
+        });
     }
 }
 
@@ -301,13 +303,10 @@ const LIMIT = 100000;
 export class AsyncLinq<T> implements AsyncIterable<T> {
     [Symbol.asyncIterator]: () => AsyncIterator<T>;
 
-    private enumerate() {
-        return this._subject[Symbol.asyncIterator]();
-    }
-
-    constructor(private _subject: AsyncIterable<T>) {
-        this[Symbol.asyncIterator] = this.enumerate.bind(this);
-        if (!(this[Symbol.asyncIterator]))
+    constructor(_subject: AsyncIterable<T>) {
+        if (_subject)
+            this[Symbol.asyncIterator] = _subject[Symbol.asyncIterator].bind(_subject);
+        else
             this[Symbol.asyncIterator] = (async function*(){});
     }
     
