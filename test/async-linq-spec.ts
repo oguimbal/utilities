@@ -79,6 +79,15 @@ describe('Async Linq', () => {
 
 
     
+    it('unique', async () => {
+        const ret = async({a: 1}, {a: 2}, {a: 2}, {a: 3})
+            .unique(x => x.a)
+            .map(x => x.a)
+        expect(await ret.toArray()).to.deep.equal([1, 2, 3]);
+        expect(await ret.toArray()).to.deep.equal([1, 2, 3]);
+    })
+
+    
     it('concat async', async () => {
         const ret = async({a: 1}, {a: 2}, {a: 3})
             .concat(async({a: 4}))

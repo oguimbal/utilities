@@ -294,6 +294,25 @@ export class Linq<T> implements Iterable<T> {
             }
         });
     }
+
+    unique(onMember?: (item: T) => any): Linq<T> {
+        
+        const _this = this;
+        onMember = onMember || (x => x);
+// tslint:disable-next-line: no-use-before-declare
+        return new Linq({
+            [Symbol.iterator]: function* () {
+                const map = new Set();
+                for (const i of _this) {
+                    const comp = onMember(i);
+                    if (map.has(comp))
+                        continue;
+                    map.add(comp);
+                    yield i;
+                }
+            }
+        });
+    }
 }
 
 
@@ -479,6 +498,25 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
                     yield t;
                 for await (const t of other)
                     yield t;
+            }
+        });
+    }
+    
+
+    unique(onMember?: (item: T) => any): AsyncLinq<T> {
+        const _this = this;
+        onMember = onMember || (x => x);
+// tslint:disable-next-line: no-use-before-declare
+        return new AsyncLinq({
+            [Symbol.asyncIterator]:  async function* () {
+                const map = new Set();
+                for await (const i of _this) {
+                    const comp = onMember(i);
+                    if (map.has(comp))
+                        continue;
+                    map.add(comp);
+                    yield i;
+                }
             }
         });
     }

@@ -32,6 +32,7 @@ describe('Linq', () => {
         expect(ret.first()).to.deep.equal({a: 1});
         expect(ret.first()).to.deep.equal({a: 1});
     });
+    
 
     it('count', () => {
         const ret = new Linq([{a: 1}, {a: 2}])
@@ -53,5 +54,12 @@ describe('Linq', () => {
             .concat(new Linq([4, 5]));
         expect(ret.toArray()).to.deep.equal([1, 2, 3, 4, 5]);
         expect(ret.toArray()).to.deep.equal([1, 2, 3, 4, 5]);
+    })
+    
+    it('unique', () => {
+        const ret = new Linq([1, 2, 2, 3])
+            .unique();
+        expect(ret.toArray()).to.deep.equal([1, 2, 3]);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3]);
     })
 });
