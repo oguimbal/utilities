@@ -1,4 +1,35 @@
 
+export function deepCopy(obj) {
+    return copyWithFunctions(obj, true);
+}
+
+
+export function deepEqual<T>(a: T, b: T, strict?: boolean) {
+// tslint:disable-next-line: triple-equals
+    if (strict ? (a === b) : (a == b))
+        return true;
+    
+    if (Array.isArray(a)) {
+        if (!Array.isArray(b) || a.length !== b.length)
+            return false;
+        for (let i = 0; i < a.length; i++) {
+            if (!deepEqual(a[i], b[i], strict))
+                return false;
+        }
+    }
+    const t = typeof a;
+    if (t !== typeof b || t !== 'object')
+        return false;
+    const ak = Object.keys(a);
+    const bk = Object.keys(b);
+    if (ak.length !== bk.length)
+        return false;
+    for (const k of Object.keys(a)) {
+        if (!(k in b) || !deepEqual(a[k], b[k], strict))
+            return false;
+    }
+    return true;
+}
 
 export function copyWithFunctions(obj, removeFunctions?: boolean) {
     if (!obj)
@@ -144,5 +175,3 @@ export function partialEqual<T>(source: T, partial: Partial<T>) {
     }
     return true;
 }
-
-
