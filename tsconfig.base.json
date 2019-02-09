@@ -1,12 +1,16 @@
 {
   
   "compilerOptions": {
-    "target": "esnext",
     "module": "commonjs",
     "sourceMap": true,
     "esModuleInterop": true,
+    "lib": [
+      "esnext.asynciterable",
+      "es7",
+      "dom"
+    ],
     "types": [
-      "node", 
+      "node",
       "reflect-metadata"
     ],
     "moduleResolution": "node",

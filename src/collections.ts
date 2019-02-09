@@ -88,12 +88,10 @@ export function range(start = 0, end = 0, step = 1) {
 
 }
 const IT_LIMIT = 100000;
-export const Iterable = {
-    *unwrap<T>(iterable: Iterable<Iterable<T>>): Iterable<T> {
-        for (const o of iterable) {
-            for (const i of o) {
-                yield i;
-            }
+export function *unwrapIterable<T>(iterable: Iterable<Iterable<T>>): Iterable<T> {
+    for (const o of iterable) {
+        for (const i of o) {
+            yield i;
         }
     }
 }

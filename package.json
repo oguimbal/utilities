@@ -1,11 +1,13 @@
 {
   "name": "@oguimbal/utilities",
-  "version": "1.1.8",
+  "version": "2.0.0",
   "description": "JS utilities",
-  "main": "bin/index.js",
-  "types": "bin/index.d.ts",
+  "source": "src/index.ts",
+  "types": "bin/esnext/index.d.ts",
+  "main": "bin/es5/index.js",
+  "jsnext:main": "bin/esnext/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.es5.json && tsc -p tsconfig.esnext.json",
     "test": "mocha --harmony-async-iteration  -r ts-node/register test/**/*-spec.ts",
     "publish-please": "npm run build && publish-please",
     "prepublishOnly": "publish-please guard"

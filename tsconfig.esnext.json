@@ -2,9 +2,11 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "target": "esnext",
+    "outDir": "bin/esnext",
+    "baseUrl": "src",
+    "declaration": true
   },
   "include": [
     "src/**/*.ts",
-    "test/**/*.ts"
-  ],
+  ]
 }

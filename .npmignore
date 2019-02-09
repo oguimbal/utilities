@@ -12,7 +12,8 @@ bower.json
 karma.conf.js
 tsconfig.json
 tsconfig.base.json
-tsconfig.build.json
+tsconfig.es5.json
+tsconfig.esnext.json
 typings.json
 CONTRIBUTING.md
 ISSUE_TEMPLATE.md
