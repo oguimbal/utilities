@@ -174,7 +174,7 @@ export class Linq<T> implements Iterable<T> {
         });
     }
 
-    selectMany<TRet>(selector: (item: T) => TRet[]): Linq<TRet> {
+    selectMany<TRet>(selector: (item: T) => Iterable<TRet>): Linq<TRet> {
         const _this = this;
         return new Linq({
             [Symbol.iterator]: function*() {
@@ -188,7 +188,7 @@ export class Linq<T> implements Iterable<T> {
     }
 
     notDefault(): Linq<T> {
-        return this.filter(x => !x);
+        return this.filter(x => !!x);
     }
 
     toDictionary(groupOn: (item: T) => string, onCollision?: (a: T, b: T, key?: string) => T) {
@@ -311,6 +311,13 @@ export class Linq<T> implements Iterable<T> {
             }
         });
     }
+    
+    reduce<TAcc>(accumulator: (current: TAcc, value: T) => TAcc, initial?: TAcc): TAcc {
+        for (const v of this) {
+            initial = accumulator(initial, v);
+        }
+        return initial;
+    }
 }
 
 
@@ -395,7 +402,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
         });
     }
 
-    selectMany<TRet>(select: (item: T) => TRet[]): AsyncLinq<TRet> {
+    selectMany<TRet>(select: (item: T) => Iterable<TRet>): AsyncLinq<TRet> {
         const _this = this;
         return new AsyncLinq({
             [Symbol.asyncIterator]:  async function* () {
@@ -409,7 +416,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     }
 
     notDefault(): AsyncLinq<T> {
-        return this.filter(x => !x);
+        return this.filter(x => !!x);
     }
 
     toDictionary(groupOn: (item: T) => string, onCollision?: (a: T, b: T, key?: string) => T) {
@@ -517,5 +524,12 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
                 }
             }
         });
+    }
+
+    async reduce<TAcc>(accumulator: (current: TAcc, value: T) => TAcc | Promise<TAcc>, initial?: TAcc): Promise<TAcc> {
+        for await (const v of this) {
+            initial = await accumulator(initial, v);
+        }
+        return initial;
     }
 }
