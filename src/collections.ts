@@ -318,6 +318,21 @@ export class Linq<T> implements Iterable<T> {
         }
         return initial;
     }
+    
+    sum(selector: ((item: T) => number) = (x => <any>x)): number {
+        return this.reduce((s, x) => selector(x) + s, 0);
+    }
+
+    avg(selector: ((item: T) => number) = (x => <any>x)): number {
+        let len = 0;
+        const val = this.reduce((s, x) => {
+            len++;
+            return selector(x) + s;
+        }, 0);
+        if (!len)
+            return 0;
+        return val / len;
+    }
 }
 
 
@@ -531,5 +546,20 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
             initial = await accumulator(initial, v);
         }
         return initial;
+    }
+
+    async sum(selector: ((item: T) => number) = (x => <any>x)): Promise<number> {
+        return this.reduce((s, x) => selector(x) + s, 0);
+    }
+
+    async avg(selector: ((item: T) => number) = (x => <any>x)): Promise<number> {
+        let len = 0;
+        const val = await this.reduce((s, x) => {
+            len++;
+            return selector(x) + s;
+        }, 0);
+        if (!len)
+            return 0;
+        return val / len;
     }
 }

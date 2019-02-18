@@ -62,4 +62,19 @@ describe('Linq', () => {
         expect(ret.toArray()).to.deep.equal([1, 2, 3]);
         expect(ret.toArray()).to.deep.equal([1, 2, 3]);
     })
+
+    
+    it('sum', () => {
+        const ret = new Linq([{a: 1}, {a: 2}, {a: 3}])
+            .filter(x => x.a >= 2);
+        expect(ret.sum(x => x.a)).to.equal(5);
+        expect(ret.sum(x => x.a)).to.equal(5);
+    })
+    
+    it('avg', () => {
+        const ret = new Linq([{a: 1}, {a: 2}, {a: 3}])
+            .filter(x => x.a >= 2);
+        expect(ret.avg(x => x.a)).to.equal(2.5);
+        expect(ret.avg(x => x.a)).to.equal(2.5);
+    })
 });
