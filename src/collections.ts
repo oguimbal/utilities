@@ -109,11 +109,30 @@ export class Linq<T> implements Iterable<T> {
         const _this = this;
         return new Linq({
             [Symbol.iterator]: function*() {
+                let cnt = length;
                 const iterator = _this[Symbol.iterator]();
-                while (length-- > 0) {
+                while (cnt-- > 0) {
                     const {done, value} = iterator.next();
                     if (done)
                         break;
+                    yield value;
+                }
+            }
+        });
+    }
+
+    skip(length: number): Linq<T> {
+        const _this = this;
+        return new Linq({
+            [Symbol.iterator]: function*() {
+                let cnt = length;
+                const iterator = _this[Symbol.iterator]();
+                while (true) {
+                    const {done, value} = iterator.next();
+                    if (done)
+                        break;
+                    if (cnt-- > 0)
+                        continue;
                     yield value;
                 }
             }
@@ -353,11 +372,30 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
         const _this = this;
         return new AsyncLinq({
             [Symbol.asyncIterator]: async function*() {
+                let cnt = length;
                 const iterator = _this[Symbol.asyncIterator]();
-                while (length-- > 0) {
+                while (cnt-- > 0) {
                     const {done, value} = await iterator.next();
                     if (done)
                         break;
+                    yield value;
+                }
+            }
+        });
+    }
+    
+    skip(length: number): AsyncLinq<T> {
+        const _this = this;
+        return new AsyncLinq({
+            [Symbol.asyncIterator]: async function*() {
+                let cnt = length;
+                const iterator = _this[Symbol.asyncIterator]();
+                while (true) {
+                    const {done, value} = await iterator.next();
+                    if (done)
+                        break;
+                    if (cnt-- > 0)
+                        continue;
                     yield value;
                 }
             }
@@ -390,7 +428,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
         return value;
     }
 
-    map<TRet>(map: (item: T, index?: number) => TRet): AsyncLinq<TRet> {
+    map<TRet>(map: (item: T, index?: number) => TRet | Promise<TRet>): AsyncLinq<TRet> {
         const _this = this;
         return new AsyncLinq({
             [Symbol.asyncIterator]: async function*() {

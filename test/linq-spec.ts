@@ -26,6 +26,21 @@ describe('Linq', () => {
         expect(ret.toArray()).to.deep.equal([1, 2]);
         expect(ret.toArray()).to.deep.equal([1, 2]);
     })
+    
+    it('take', () => {
+        const ret = new Linq([1, 2, 3, 4, 5])
+            .take(3);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3]);
+        expect(ret.toArray()).to.deep.equal([1, 2, 3]);
+    });
+    
+    it('skip', () => {
+        const ret = new Linq([1, 2, 3, 4, 5])
+            .skip(3);
+        expect(ret.toArray()).to.deep.equal([4, 5]);
+        expect(ret.toArray()).to.deep.equal([4, 5]);
+    })
+
 
     it('first', () => {
         const ret = new Linq([{a: 1}, {a: 2}])

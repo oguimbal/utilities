@@ -29,6 +29,23 @@ describe('Async Linq', () => {
         expect(await ret.toArray()).to.deep.equal([1, 2, 3, 4]);
     });
 
+    
+    it('take', async () => {
+        const ret = async(1, 2, 3, 4, 5)
+            .take(3);
+        expect(await ret.toArray()).to.deep.equal([1, 2, 3]);
+        expect(await ret.toArray()).to.deep.equal([1, 2, 3]);
+    });
+
+    
+    it('skip', async () => {
+        const ret = async(1, 2, 3, 4, 5)
+            .skip(3);
+        expect(await ret.toArray()).to.deep.equal([4, 5]);
+        expect(await ret.toArray()).to.deep.equal([4, 5]);
+    });
+
+
     it('map', async () => {
         const ret = async({a: 1}, {a: 2})
             .map(x => x.a)
