@@ -455,12 +455,12 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
         });
     }
 
-    selectMany<TRet>(select: (item: T) => Iterable<TRet>): AsyncLinq<TRet> {
+    selectMany<TRet>(select: (item: T) => Iterable<TRet> | Promise<Iterable<TRet>>): AsyncLinq<TRet> {
         const _this = this;
         return new AsyncLinq({
             [Symbol.asyncIterator]:  async function* () {
                 for await(const o of _this) {
-                    for (const i of (select(o) || [])) {
+                    for (const i of await (select(o) || [])) {
                         yield i;
                     }
                 }
