@@ -6,3 +6,4 @@ export * from './currency';
 export * from './navigator';
 export * from './types';
 export * from './introspection';
+export * from './expirable';
