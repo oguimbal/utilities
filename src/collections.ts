@@ -297,12 +297,12 @@ export class Linq<T> implements Iterable<T> {
     }
     
 
-    concat<TOther>(other: Iterable<TOther>) {
+    concat<TOther>(other: Iterable<TOther>): Linq<T | TOther> {
         if (!other)
             return this;
         const _this = this;
 // tslint:disable-next-line: no-use-before-declare
-        return new Linq({
+        return new Linq<T | TOther>({
             [Symbol.iterator]:  function* () {
                 for (const t of _this)
                     yield t;
