@@ -8,7 +8,7 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean) {
 // tslint:disable-next-line: triple-equals
     if (strict ? (a === b) : (a == b))
         return true;
-    
+
     if (Array.isArray(a)) {
         if (!Array.isArray(b) || a.length !== b.length)
             return false;
@@ -16,6 +16,7 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean) {
             if (!deepEqual(a[i], b[i], strict))
                 return false;
         }
+        return true;
     }
     const t = typeof a;
     if (t !== typeof b || t !== 'object')
@@ -150,7 +151,7 @@ export function graphMatches(item: any, val: string) {
 
 
 /**
- * Returns a copy of 'options', augmented with 'defaults' keys that were not in options 
+ * Returns a copy of 'options', augmented with 'defaults' keys that were not in options
  */
 export function mergeOptions<T extends Object>(options: Partial<T>, defaults: T): T {
     const ret: T = {...<any>(options || {})};

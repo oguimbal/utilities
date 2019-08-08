@@ -27,7 +27,6 @@ export function levenshteinDistance(string1: string, string2: string): number {
 }
 
 export function removeSpecialCharacters(str: string) {
-    const rgx = new RegExp(/[^a-zA-Z0-9 -]/);
-    return str.replace(rgx, '_');  
+    const rgx = new RegExp(/[^a-zA-Z0-9\s\-]/);
+    return str.replace(rgx, '_');
 }
-
