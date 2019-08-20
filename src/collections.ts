@@ -1,4 +1,5 @@
 import { stringify } from 'querystring';
+import { Ctor } from './types';
 
 export function groupBy<T>(array: T[], groupOn: (elt: T) => string) {
     const ret: {[key: string]: T[]} = {};
@@ -104,7 +105,7 @@ export class Linq<T> implements Iterable<T> {
         _subject = _subject || [];
         this[Symbol.iterator] = _subject[Symbol.iterator].bind(_subject);
     }
-    
+
     take(length: number): Linq<T> {
         const _this = this;
         return new Linq({
@@ -139,6 +140,25 @@ export class Linq<T> implements Iterable<T> {
         });
     }
 
+    zip<Other>(other: Iterable<Other>): Linq<[T, Other]> {
+        const _this = this;
+        return new Linq<[T, Other]>({
+            [Symbol.iterator]: function*() {
+                const a = _this[Symbol.iterator]();
+                const b = other[Symbol.iterator]();
+                while (true) {
+                    const aRes = a.next();
+                    if (aRes.done)
+                        break;
+                    const bRes = b.next();
+                    if (bRes.done)
+                        break;
+                    yield [aRes.value, bRes.value];
+                }
+            }
+        });
+    }
+
     count(limit?: number): number {
         const iterator = this[Symbol.iterator]();
         limit = IT_LIMIT;
@@ -159,7 +179,7 @@ export class Linq<T> implements Iterable<T> {
             throw new Error('Set is empty');
         return value;
     }
-    
+
     firstOrDefault(): T {
         const iterator = this[Symbol.iterator]();
         const {value} = iterator.next();
@@ -193,6 +213,18 @@ export class Linq<T> implements Iterable<T> {
         });
     }
 
+    instancesOf<SubType extends T>(ctor: Ctor<SubType>): Linq<SubType> {
+        const _this = this;
+        return new Linq({
+            [Symbol.iterator]: function*() {
+                for (const k of _this) {
+                    if (k instanceof ctor)
+                        yield k;
+                }
+            }
+        });
+    }
+
     selectMany<TRet>(selector: (item: T) => Iterable<TRet>): Linq<TRet> {
         const _this = this;
         return new Linq({
@@ -213,7 +245,7 @@ export class Linq<T> implements Iterable<T> {
     toDictionary(groupOn: (item: T) => string, onCollision?: (a: T, b: T, key?: string) => T) {
         return this.toDictionarySelect(groupOn, x => x, onCollision);
     }
-    
+
     toDictionarySelect<TRet>(groupOn: (item: T) => string, select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: string) => TRet): {[key: string]: TRet} {
         const ret: {[key: string]: TRet} = {};
         let i = 0;
@@ -234,7 +266,7 @@ export class Linq<T> implements Iterable<T> {
     toMap<TKey>(groupOn: (item: T) => TKey, onCollision?: (a: T, b: T, key?: TKey) => T): Map<TKey, T> {
         return this.toMapSelect(groupOn, x => x, onCollision);
     }
-    
+
     toMapSelect<TKey, TRet>(groupOn: (item: T) => TKey, select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: TKey) => TRet): Map<TKey, TRet> {
         const ret = new Map<TKey, TRet>();
         let i = 0;
@@ -268,7 +300,7 @@ export class Linq<T> implements Iterable<T> {
     toLookup<TKey>(groupOn: (elt: T) => TKey): Map<TKey, T[]> {
         return this.toLookupSelect(groupOn, x => x);
     }
-    
+
 
     toLookupSelect<TKey, TRet>(groupOn: (elt: T) => TKey, select: (elt: T) => TRet): Map<TKey, TRet[]> {
         const ret = new Map<TKey, TRet[]>();
@@ -295,7 +327,7 @@ export class Linq<T> implements Iterable<T> {
             }
         });
     }
-    
+
 
     concat<TOther>(other: Iterable<TOther>): Linq<T | TOther> {
         if (!other)
@@ -313,7 +345,7 @@ export class Linq<T> implements Iterable<T> {
     }
 
     unique(onMember?: (item: T) => any): Linq<T> {
-        
+
         const _this = this;
         onMember = onMember || (x => x);
 // tslint:disable-next-line: no-use-before-declare
@@ -330,14 +362,14 @@ export class Linq<T> implements Iterable<T> {
             }
         });
     }
-    
+
     reduce<TAcc>(accumulator: (current: TAcc, value: T) => TAcc, initial?: TAcc): TAcc {
         for (const v of this) {
             initial = accumulator(initial, v);
         }
         return initial;
     }
-    
+
     sum(selector: ((item: T) => number) = (x => <any>x)): number {
         return this.reduce((s, x) => selector(x) + s, 0);
     }
@@ -361,13 +393,16 @@ const LIMIT = 100000;
 export class AsyncLinq<T> implements AsyncIterable<T> {
     [Symbol.asyncIterator]: () => AsyncIterator<T>;
 
-    constructor(_subject: AsyncIterable<T>) {
-        if (_subject)
+    constructor(_subject: AsyncIterable<T> | Iterable<T>) {
+        if (_subject) {
+            if (!_subject[Symbol.asyncIterator])
+                _subject = new Linq(<Iterable<T>>_subject).toAsync();
             this[Symbol.asyncIterator] = _subject[Symbol.asyncIterator].bind(_subject);
+        }
         else
             this[Symbol.asyncIterator] = (async function*(){});
     }
-    
+
     take(length: number): AsyncLinq<T> {
         const _this = this;
         return new AsyncLinq({
@@ -383,7 +418,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
             }
         });
     }
-    
+
     skip(length: number): AsyncLinq<T> {
         const _this = this;
         return new AsyncLinq({
@@ -397,6 +432,27 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
                     if (cnt-- > 0)
                         continue;
                     yield value;
+                }
+            }
+        });
+    }
+
+
+
+    zip<Other>(other: Iterable<Other>): AsyncLinq<[T, Other]> {
+        const _this = this;
+        return new AsyncLinq<[T, Other]>({
+            [Symbol.asyncIterator]: async function*() {
+                const a = _this[Symbol.asyncIterator]();
+                const b = other[Symbol.asyncIterator]();
+                while (true) {
+                    const aRes = await a.next();
+                    if (aRes.done)
+                        break;
+                    const bRes = await b.next();
+                    if (bRes.done)
+                        break;
+                    yield [aRes.value, bRes.value];
                 }
             }
         });
@@ -421,7 +477,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
             throw new Error('Set is empty');
         return value;
     }
-    
+
     async firstOrDefault(): Promise<T> {
         const iterator = this[Symbol.asyncIterator]();
         const {value} = await iterator.next();
@@ -455,6 +511,18 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
         });
     }
 
+    instancesOf<SubType extends T>(ctor: Ctor<SubType>): AsyncLinq<SubType> {
+        const _this = this;
+        return new AsyncLinq({
+            [Symbol.asyncIterator]: async function*() {
+                for await(const k of _this) {
+                    if (k instanceof ctor)
+                        yield k;
+                }
+            }
+        });
+    }
+
     selectMany<TRet>(select: (item: T) => Iterable<TRet> | Promise<Iterable<TRet>>): AsyncLinq<TRet> {
         const _this = this;
         return new AsyncLinq({
@@ -475,7 +543,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     toDictionary(groupOn: (item: T) => string, onCollision?: (a: T, b: T, key?: string) => T) {
         return this.toDictionarySelect(groupOn, x => x, onCollision);
     }
-    
+
     async toDictionarySelect<TRet>(groupOn: (item: T) => (string | Promise<string>), select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: string) => TRet): Promise<{[key: string]: TRet}> {
         const ret: {[key: string]: TRet} = {};
         let i = 0;
@@ -496,7 +564,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     toMap<TKey>(groupOn: (item: T) => TKey, onCollision?: (a: T, b: T, key?: TKey) => T) {
         return this.toMapSelect(groupOn, x => x, onCollision);
     }
-    
+
     async toMapSelect<TKey, TRet>(groupOn: (item: T) => (TKey | Promise<TKey>), select: ((elt: T) => TRet), onCollision?: (a: TRet, b: TRet, key?: TKey) => TRet): Promise<Map<TKey, TRet>> {
         const ret = new Map<TKey, TRet>();
         let i = 0;
@@ -528,7 +596,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
     toLookup<TKey>(groupOn: (elt: T) => TKey) {
         return this.toLookupSelect(groupOn, x => x);
     }
-    
+
 
     async toLookupSelect<TKey, TRet>(groupOn: (elt: T) => (TKey | Promise<TKey>), select: (elt: T) => TRet): Promise<Map<TKey, TRet[]>> {
         const ret = new Map<TKey, TRet[]>();
@@ -559,7 +627,7 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
             }
         });
     }
-    
+
 
     unique(onMember?: (item: T) => any): AsyncLinq<T> {
         const _this = this;

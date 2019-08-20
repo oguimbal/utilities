@@ -2,3 +2,6 @@
 export type Partial<T> = { [P in keyof T]?: T[P]; };
 export type DeepPartial<T> = { [P in keyof T]?: DeepPartial<T[P]>; };
 export const nameof = <T>(name: keyof T) => name;
+export interface Ctor<T> extends Function {
+    new(...params: any[]): T; prototype: T;
+}
