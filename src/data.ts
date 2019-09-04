@@ -32,9 +32,11 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean) {
     return true;
 }
 
-export function copyWithFunctions(obj, removeFunctions?: boolean) {
+export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20) {
     if (!obj)
         return obj;
+    if (maxDepth < 0)
+        throw new Error('Max depth reached');
     if (Array.isArray(obj)) {
         const result = [];
         obj.forEach(x => {
@@ -42,7 +44,7 @@ export function copyWithFunctions(obj, removeFunctions?: boolean) {
                 if (!removeFunctions)
                     result.push(x);
             } else
-                result.push(copyWithFunctions(x, removeFunctions));
+                result.push(copyWithFunctions(x, removeFunctions, maxDepth - 1));
         });
         return result;
     }else if (typeof obj === 'object') {
@@ -55,7 +57,7 @@ export function copyWithFunctions(obj, removeFunctions?: boolean) {
                 if (!removeFunctions)
                     result[k] = val;
             } else {
-                result[k] = copyWithFunctions(val, removeFunctions);
+                result[k] = copyWithFunctions(val, removeFunctions, maxDepth - 1);
             }
         }
         return result;
