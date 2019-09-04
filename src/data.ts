@@ -1,10 +1,15 @@
+import moment from 'moment';
 
 export function deepCopy(obj) {
     return copyWithFunctions(obj, true);
 }
 
 
-export function deepEqual<T>(a: T, b: T, strict?: boolean) {
+export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10) {
+    if (depth < 0) {
+        console.error('Comparing too deep entities');
+        return false;
+    }
 // tslint:disable-next-line: triple-equals
     if (strict ? (a === b) : (a == b))
         return true;
@@ -13,20 +18,40 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean) {
         if (!Array.isArray(b) || a.length !== b.length)
             return false;
         for (let i = 0; i < a.length; i++) {
-            if (!deepEqual(a[i], b[i], strict))
+            if (!deepEqual(a[i], b[i], strict, depth - 1))
                 return false;
         }
         return true;
     }
+
+    // handle dates
+    if (a instanceof Date || b instanceof Date || moment.isMoment(a) || moment.isMoment(b)) {
+        const am = moment(a);
+        const bm = moment(b);
+        if (am.isValid() !== bm.isValid())
+            return false;
+        return Math.abs(am.diff(bm, 'seconds')) < 0.001;
+    }
+
+    // handle durations
+    if (moment.isDuration(a) || moment.isDuration(b)) {
+        const da = moment.duration(a);
+        const db = moment.duration(b);
+        if (da.isValid() !== db.isValid())
+            return false;
+        return Math.abs(da.asMilliseconds() - db.asMilliseconds()) < 1;
+    }
+
+    // handle plain objects
     const t = typeof a;
-    if (t !== typeof b || t !== 'object')
+    if (t !== 'object' || t !== typeof b)
         return false;
     const ak = Object.keys(a);
     const bk = Object.keys(b);
     if (ak.length !== bk.length)
         return false;
     for (const k of Object.keys(a)) {
-        if (!(k in b) || !deepEqual(a[k], b[k], strict))
+        if (!(k in b) || !deepEqual(a[k], b[k], strict, depth - 1))
             return false;
     }
     return true;
@@ -37,6 +62,11 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
         return obj;
     if (maxDepth < 0)
         throw new Error('Max depth reached');
+    // handle known immutable types (that are typeof 'object')
+    if (obj instanceof Date || moment.isMoment(obj) || moment.isDuration(obj)) {
+        return obj;
+    }
+
     if (Array.isArray(obj)) {
         const result = [];
         obj.forEach(x => {
