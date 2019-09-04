@@ -1,7 +1,7 @@
 
 import { remove } from 'diacritics';
 import levenshtein from 'js-levenshtein';
-import { toDictionary, Linq } from './collections';
+import { toDictionary, Linq, AsyncLinq } from './collections';
 
 
 // http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
@@ -31,24 +31,51 @@ export function removeSpecialCharacters(str: string) {
     const rgx = new RegExp(/[^a-zA-Z0-9\s\-]/);
     return str.replace(rgx, '_');
 }
+const uncamel = (camelCase: string) => camelCase
+  .replace(/([A-Z])/g, (match) => ` ${match.toLowerCase()}`)
+  .replace(/\s+/g, ' ');
 
-function* fetchTerms(value: any, options: TreeFinderOptions<any>): IterableIterator<string> {
-    if (!value)
+function* _fetchTerms(value: any, options: TreeFinderOptions<any>, level: number): IterableIterator<string> {
+    if (!value || level < 0)
         return;
     if (typeof value === 'string') {
-        yield remove(value.toLowerCase());
+        value = remove(value);
+        if (!options.noUncamel) {
+            const uncamelized = uncamel(value);
+            yield uncamelized.toLowerCase();
+        }
+        yield value.toLowerCase();
         return;
     }
     if (typeof value !== 'object')
         return;
+
+    if (value instanceof Array) {
+        for (const v of value) {
+            yield* _fetchTerms(v, options, level - 1);
+        }
+        return;
+    }
+
     for (const k of Object.keys(value)) {
         if (options.onlyProperties && !options.onlyProperties.has(k))
             continue;
         if (options.ignoreProperties && options.ignoreProperties.has(k))
             continue;
-        for (const f of fetchTerms(value[k], options))
+        for (const f of _fetchTerms(value[k], options, level - 1))
             yield f;
     }
+}
+
+function fetchTerms(value: any, options: TreeFinderOptions<any>): string[] {
+    const ret = new Linq(_fetchTerms(value, options, 10))
+        .unique()
+        .toArray();
+    // if sufficient long terms, then ignore shorts
+    const shorts = ret.filter(x => x.length >= 3);
+    return shorts.length >= 1
+        ? shorts
+        : ret;
 }
 
 
@@ -61,6 +88,7 @@ export interface TreeFinderOptions<T> {
     readonly onlyProperties?: Set<string>;
     readonly ignoreProperties?: Set<string>;
     readonly noLevenstein?: boolean;
+    readonly noUncamel?: boolean;
 }
 
 /** Finds/suggests an item based on all text properties in the given collection */
@@ -71,7 +99,7 @@ export class TreeFinder<T> {
     constructor(items: T[], private options?: TreeFinderOptions<T>) {
         this.options = options || {};
         this.items = items.map(x => ({
-            terms: Array.from(fetchTerms(x, this.options)),
+            terms: fetchTerms(x, this.options),
             item: x,
         }));
         if (this.options.fetchId) {
@@ -88,7 +116,7 @@ export class TreeFinder<T> {
             throw new Error('You must have provided a "fetchId" function to use udpate');
         const id = this.options.fetchId(item);
         const exist = this.itemsById[id];
-        const terms = Array.from(fetchTerms(item, this.options));
+        const terms = fetchTerms(item, this.options);
         if (!exist) {
             // add
             this.items.push({
@@ -131,10 +159,28 @@ export class TreeFinder<T> {
     }
 
     private *_search(search: string, predicate?: (item: T) => boolean): IterableIterator<{score: number, item: T}> {
+        const forceYielded = new Set<T>();
+        if (this.itemsById && search in this.itemsById) {
+            const item = this.itemsById[search].item;
+            yield {score: 100001, item};
+            forceYielded.add(item);
+        }
         search = remove(search.toLowerCase());
+        if (this.itemsById && search in this.itemsById) {
+            const item = this.itemsById[search].item;
+            if (!forceYielded.has(item)) {
+                yield {score: 100000, item};
+                forceYielded.add(item);
+            }
+        }
         const searchBoundary = new RegExp('\\b' + escapeRegExp(search));
         const searchBoundaries = new RegExp('\\b' + escapeRegExp(search) + '\\b');
         const score = (txt: string) => {
+            if (txt === search) {
+                return txt.length > 3
+                    ? (10000 + txt.length)
+                    : (5000 + txt.length);
+            }
             const foundAt = searchBoundary.exec(txt);
             if (foundAt) {
                 const base = searchBoundaries.test(txt) ? 4000 : 3000;
@@ -143,15 +189,26 @@ export class TreeFinder<T> {
             const i = txt.indexOf(search);
             if (i >= 0)
                 return 2000 - i;
-            if (!this.options.noLevenstein && txt.length < 40 && Math.abs(txt.length - search.length) < 10) // do not perform levenstein on large strings (it is a n^2 algorithm)
-                return 1000 - levenshtein(search, txt);
+            // do not perform levenstein on large strings (it is a n^2 algorithm)
+            if (!this.options.noLevenstein && txt.length < 20 && Math.abs(txt.length - search.length) < 5) {
+                const lev = levenshtein(search, txt);
+                if (lev <= search.length / 2)
+                    return 1000 - lev;
+            }
             return 0;
         };
 
         for (const k of this.items) {
+            if (forceYielded.has(k.item))
+                continue;
             if (predicate && !predicate(k.item))
                 continue;
-            const s = k.terms.map(score).reduce((a, b) => a + b, 0);
+            const nZero = k.terms.map(score)
+                .filter(x => x > 0);
+            if (!nZero.length)
+                continue;
+            const s = nZero
+                .reduce((a, b) => a + b, 0) / nZero.length;
             yield {item: k.item, score: s};
         }
     }
