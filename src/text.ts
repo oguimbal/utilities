@@ -111,6 +111,13 @@ export class TreeFinder<T> {
         return new Linq(this.items).map(x => x.item);
     }
 
+    byId(id: string): T {
+        if (!this.options.fetchId)
+            throw new Error('You must have provided a "fetchId" function to use udpate');
+        const ret = this.itemsById[id];
+        return ret && ret.item;
+    }
+
     update(item: T) {
         if (!this.options.fetchId)
             throw new Error('You must have provided a "fetchId" function to use udpate');

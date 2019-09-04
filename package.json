@@ -1,6 +1,6 @@
 {
   "name": "@oguimbal/utilities",
-  "version": "2.0.16",
+  "version": "2.0.17",
   "description": "JS utilities",
   "source": "src/index.ts",
   "types": "bin/esnext/index.d.ts",
