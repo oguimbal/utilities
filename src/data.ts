@@ -5,7 +5,7 @@ export function deepCopy(obj) {
 }
 
 
-export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10) {
+export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10, numberDelta = 0.0001) {
     if (depth < 0) {
         console.error('Comparing too deep entities');
         return false;
@@ -18,7 +18,7 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10) {
         if (!Array.isArray(b) || a.length !== b.length)
             return false;
         for (let i = 0; i < a.length; i++) {
-            if (!deepEqual(a[i], b[i], strict, depth - 1))
+            if (!deepEqual(a[i], b[i], strict, depth - 1, numberDelta))
                 return false;
         }
         return true;
@@ -42,16 +42,25 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10) {
         return Math.abs(da.asMilliseconds() - db.asMilliseconds()) < 1;
     }
 
+    const fa = Number.isFinite(<any>a);
+    const fb = Number.isFinite(<any>b);
+    if (fa || fb) {
+        return fa && fb && Math.abs(<any>a - <any>b) <= numberDelta;
+    }
+
     // handle plain objects
     const t = typeof a;
     if (t !== 'object' || t !== typeof b)
         return false;
     const ak = Object.keys(a);
     const bk = Object.keys(b);
-    if (ak.length !== bk.length)
+    if (strict && ak.length !== bk.length)
         return false;
-    for (const k of Object.keys(a)) {
-        if (!(k in b) || !deepEqual(a[k], b[k], strict, depth - 1))
+    const set: Iterable<string> = strict
+        ? Object.keys(a)
+        : new Set([...Object.keys(a), ...Object.keys(b)]);
+    for (const k of set) {
+        if (!deepEqual(a[k], b[k], strict, depth - 1, numberDelta))
             return false;
     }
     return true;

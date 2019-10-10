@@ -3,6 +3,7 @@
     "mochaExplorer.require": [
         "ts-node/register"
     ],
+    "mochaExplorer.nodeArgs": "--harmony-async-iteration",
     "mochaExplorer.debuggerConfig": "Debug Mocha Tests",
     "files.exclude": {
         "coverage": true,
