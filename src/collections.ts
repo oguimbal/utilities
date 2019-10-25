@@ -554,9 +554,9 @@ export class AsyncLinq<T> implements AsyncIterable<T> {
             if (ret[key]) {
                 if (!onCollision)
                     throw new Error('Duplicate key: ' + key);
-                ret[key] = onCollision(ret[key], select(e), key);
+                ret[key] = await onCollision(ret[key], select(e), key);
             } else
-                ret[key] = select(e);
+                ret[key] = await select(e);
         }
         return ret;
     }
