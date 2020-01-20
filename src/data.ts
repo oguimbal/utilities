@@ -72,8 +72,14 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
     if (maxDepth < 0)
         throw new Error('Max depth reached');
     // handle known immutable types (that are typeof 'object')
-    if (obj instanceof Date || moment.isMoment(obj) || moment.isDuration(obj)) {
+    if (obj instanceof Date) {
         return obj;
+    }
+    if (moment.isMoment(obj)) {
+        return moment(obj);
+    }
+    if (moment.isDuration(obj)) {
+        return moment.isDuration(obj);
     }
 
     if (Array.isArray(obj)) {
@@ -99,6 +105,10 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
                 result[k] = copyWithFunctions(val, removeFunctions, maxDepth - 1);
             }
         }
+        for (const o of Object.getOwnPropertySymbols(obj)) {
+            result[o] = obj[o];
+        }
+        Object.setPrototypeOf(result, Object.getPrototypeOf(obj));
         return result;
     } else {
         return obj;
