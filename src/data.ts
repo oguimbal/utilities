@@ -10,9 +10,17 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10, numberDel
         console.error('Comparing too deep entities');
         return false;
     }
-// tslint:disable-next-line: triple-equals
-    if (strict ? (a === b) : (a == b))
+
+    if (a === b) {
         return true;
+    }
+    if (!strict) {
+        // should not use '==' because it could call .toString() on objects when compared to strings.
+        // ... which is not ok. Especially when working with translatable objects, which .toString() returns a transaltion (a string, thus)
+        if (!a && !b) {
+            return true;
+        }
+    }
 
     if (Array.isArray(a)) {
         if (!Array.isArray(b) || a.length !== b.length)
@@ -109,6 +117,9 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
             result[o] = obj[o];
         }
         Object.setPrototypeOf(result, Object.getPrototypeOf(obj));
+        if (Object.isFrozen(obj)) {
+            Object.freeze(result);
+        }
         return result;
     } else {
         return obj;
