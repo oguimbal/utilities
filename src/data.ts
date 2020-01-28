@@ -58,8 +58,11 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10, numberDel
 
     // handle plain objects
     const t = typeof a;
-    if (t !== 'object' || t !== typeof b)
+    if (typeof a !== 'object' || typeof a !== typeof b)
         return false;
+    if (!a || !b) {
+        return false;
+    }
     const ak = Object.keys(a);
     const bk = Object.keys(b);
     if (strict && ak.length !== bk.length)
