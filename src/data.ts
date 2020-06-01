@@ -71,7 +71,7 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10, numberDel
 
     const aproto = Object.getPrototypeOf(a);
     const bproto = Object.getPrototypeOf(a);
-    if (aproto && aproto.constructor && deepEqualityComparers.has(aproto) || bproto && bproto.constructor && deepEqualityComparers.has(bproto)) {
+    if (aproto && aproto.constructor && deepEqualityComparers.has(aproto.constructor) || bproto && bproto.constructor && deepEqualityComparers.has(bproto.constructor)) {
         if (aproto.constructor !== bproto.constructor) {
             return false;
         }
