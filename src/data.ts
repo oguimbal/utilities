@@ -1,9 +1,15 @@
 import moment from 'moment';
+import { Ctor } from './types';
 
 export function deepCopy(obj) {
     return copyWithFunctions(obj, true);
 }
 
+export type DeepEqualityComparer<T> = (a: T, b: T, strict?: boolean) => boolean;
+const deepEqualityComparers = new Map<Ctor<any>, DeepEqualityComparer<any>>();
+export function addDeepEqualityComparer<T>(proto: Ctor<T>, comparer: DeepEqualityComparer<T>) {
+    deepEqualityComparers.set(proto, comparer);
+}
 
 export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10, numberDelta = 0.0001) {
     if (depth < 0) {
@@ -57,11 +63,19 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10, numberDel
     }
 
     // handle plain objects
-    const t = typeof a;
     if (typeof a !== 'object' || typeof a !== typeof b)
         return false;
     if (!a || !b) {
         return false;
+    }
+
+    const aproto = Object.getPrototypeOf(a);
+    const bproto = Object.getPrototypeOf(a);
+    if (aproto && aproto.constructor && deepEqualityComparers.has(aproto) || bproto && bproto.constructor && deepEqualityComparers.has(bproto)) {
+        if (aproto.constructor !== bproto.constructor) {
+            return false;
+        }
+        return deepEqualityComparers.get(aproto.constructor)(a, b, strict);
     }
     const ak = Object.keys(a);
     const bk = Object.keys(b);
@@ -76,6 +90,7 @@ export function deepEqual<T>(a: T, b: T, strict?: boolean, depth = 10, numberDel
     }
     return true;
 }
+
 
 export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20) {
     if (!obj)
