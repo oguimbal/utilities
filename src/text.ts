@@ -45,6 +45,13 @@ function* _fetchTerms(value: any, options: TreeFinderOptions<any>, level: number
     if (typeof value !== 'object')
         return;
 
+
+    const direct = options.anyToText && options.anyToText(value);
+    if (direct) {
+        yield* direct;
+        return;
+    }
+
     if (value instanceof Array) {
         for (const v of value) {
             yield* _fetchTerms(v, options, level - 1);
@@ -57,6 +64,7 @@ function* _fetchTerms(value: any, options: TreeFinderOptions<any>, level: number
             continue;
         if (options.ignoreProperties && options.ignoreProperties.has(k))
             continue;
+
         for (const f of _fetchTerms(value[k], options, level - 1))
             yield f;
     }
@@ -75,6 +83,7 @@ function fetchTerms(value: any, options: TreeFinderOptions<any>): string[] {
             yield v.toLowerCase();
         })
         .unique()
+        .filter(x => !!x)
         .toArray();
     // if sufficient long terms, then ignore shorts
     const shorts = ret.filter(x => x.length >= 3);
@@ -94,7 +103,10 @@ export interface TreeFinderOptions<T> {
     readonly ignoreProperties?: Set<string>;
     readonly noLevenstein?: boolean;
     readonly noUncamel?: boolean;
+    /** Custom text conversion of the whole object */
     readonly fetchText?: (item: T) => Iterable<string>;
+    /** If provided, this will give a chance to avoid traversing an object by returning a string to analyze (will traverse object if returns null.) */
+    readonly anyToText?: (value: any) => Iterable<string> | null | undefined;
 }
 
 /** Finds/suggests an item based on all text properties in the given collection */
