@@ -74,6 +74,7 @@ function fetchTerms(value: any, options: TreeFinderOptions<any>): string[] {
     const ret = new Linq(options.fetchText
         ? options.fetchText(value)
         : _fetchTerms(value, options, 10))
+        .notDefault()
         .selectMany(function* (v: string) {
             v = remove(v);
             if (!options.noUncamel) {
