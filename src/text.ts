@@ -13,9 +13,9 @@ export function escapeRegExp(str) {
 
 export function camelize(str: string) {
     str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    str = str.replace(/(?:^\w|[A-Z]|\b\w)/g, function(letter, index) {
+    str = str.replace(/(?:^\w|[A-Z]|\b\w)/g, function (letter, index) {
         return index === 0 ? letter.toLowerCase() : letter.toUpperCase();
-      }).replace(/\s+/g, '');
+    }).replace(/\s+/g, '');
     str = str.replace(/[^a-zA-Z0-9_]+/g, '');
     return str;
 }
@@ -32,19 +32,14 @@ export function removeSpecialCharacters(str: string) {
     return str.replace(rgx, '_');
 }
 const uncamel = (camelCase: string) => camelCase
-  .replace(/([A-Z])/g, (match) => ` ${match.toLowerCase()}`)
-  .replace(/\s+/g, ' ');
+    .replace(/([A-Z])/g, (match) => ` ${match.toLowerCase()}`)
+    .replace(/\s+/g, ' ');
 
 function* _fetchTerms(value: any, options: TreeFinderOptions<any>, level: number): IterableIterator<string> {
     if (!value || level < 0)
         return;
     if (typeof value === 'string') {
-        value = remove(value);
-        if (!options.noUncamel) {
-            const uncamelized = uncamel(value);
-            yield uncamelized.toLowerCase();
-        }
-        yield value.toLowerCase();
+        yield value;
         return;
     }
     if (typeof value !== 'object')
@@ -68,7 +63,17 @@ function* _fetchTerms(value: any, options: TreeFinderOptions<any>, level: number
 }
 
 function fetchTerms(value: any, options: TreeFinderOptions<any>): string[] {
-    const ret = new Linq(_fetchTerms(value, options, 10))
+    const ret = new Linq(options.fetchText
+        ? options.fetchText(value)
+        : _fetchTerms(value, options, 10))
+        .selectMany(function* (v: string) {
+            v = remove(v);
+            if (!options.noUncamel) {
+                const uncamelized = uncamel(v);
+                yield uncamelized.toLowerCase();
+            }
+            yield v.toLowerCase();
+        })
         .unique()
         .toArray();
     // if sufficient long terms, then ignore shorts
@@ -89,12 +94,13 @@ export interface TreeFinderOptions<T> {
     readonly ignoreProperties?: Set<string>;
     readonly noLevenstein?: boolean;
     readonly noUncamel?: boolean;
+    readonly fetchText?: (item: T) => Iterable<string>;
 }
 
 /** Finds/suggests an item based on all text properties in the given collection */
 export class TreeFinder<T> {
     private items: TreeItem<T>[];
-    private itemsById: {[key: string]: TreeItem<T>};
+    private itemsById: { [key: string]: TreeItem<T> };
 
     constructor(items: T[], private options?: TreeFinderOptions<T>) {
         this.options = options || {};
@@ -165,18 +171,18 @@ export class TreeFinder<T> {
         return results.map(x => x.item);
     }
 
-    private *_search(search: string, predicate?: (item: T) => boolean): IterableIterator<{score: number, item: T}> {
+    private *_search(search: string, predicate?: (item: T) => boolean): IterableIterator<{ score: number, item: T }> {
         const forceYielded = new Set<T>();
         if (this.itemsById && search in this.itemsById) {
             const item = this.itemsById[search].item;
-            yield {score: 100001, item};
+            yield { score: 100001, item };
             forceYielded.add(item);
         }
         search = remove(search.toLowerCase());
         if (this.itemsById && search in this.itemsById) {
             const item = this.itemsById[search].item;
             if (!forceYielded.has(item)) {
-                yield {score: 100000, item};
+                yield { score: 100000, item };
                 forceYielded.add(item);
             }
         }
@@ -216,7 +222,7 @@ export class TreeFinder<T> {
                 continue;
             const s = nZero
                 .reduce((a, b) => a + b, 0) / nZero.length;
-            yield {item: k.item, score: s};
+            yield { item: k.item, score: s };
         }
     }
 }
