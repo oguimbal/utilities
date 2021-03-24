@@ -105,7 +105,7 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
         return moment(obj);
     }
     if (moment.isDuration(obj)) {
-        return moment.isDuration(obj);
+        return moment.duration(obj);
     }
 
     if (Array.isArray(obj)) {
