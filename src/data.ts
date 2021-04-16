@@ -118,7 +118,7 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
                 result.push(copyWithFunctions(x, removeFunctions, maxDepth - 1));
         });
         return result;
-    }else if (typeof obj === 'object') {
+    } else if (typeof obj === 'object') {
         const result = {};
         for (const k in obj) {
             if (!(k in obj))
@@ -134,7 +134,10 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
         for (const o of Object.getOwnPropertySymbols(obj)) {
             result[o] = obj[o];
         }
-        Object.setPrototypeOf(result, Object.getPrototypeOf(obj));
+        const proto = Object.getPrototypeOf(obj);
+        if (proto) {
+            Object.setPrototypeOf(result, proto);
+        }
         if (Object.isFrozen(obj)) {
             Object.freeze(result);
         }
@@ -143,8 +146,8 @@ export function copyWithFunctions(obj, removeFunctions?: boolean, maxDepth = 20)
         return obj;
     }
 }
-export function copyFunctions(target, source)
-{
+
+export function copyFunctions(target, source) {
     if (Array.isArray(target)) {
         if (!Array.isArray(source))
             return target;
@@ -175,7 +178,7 @@ export function copyFunctions(target, source)
         return ret;
     } else if (typeof source === 'function') {
         return source;
-    }else
+    } else
         return target;
 }
 
@@ -193,7 +196,7 @@ export function copy<TDest>(source: Partial<TDest>, destination: TDest, ...onlyP
 }
 
 
-export function resetTo(objToReset, source){
+export function resetTo(objToReset, source) {
     for (const o in objToReset)
         delete objToReset[o];
     for (const o in source) {
@@ -234,7 +237,7 @@ export function graphMatches(item: any, val: string) {
  * Returns a copy of 'options', augmented with 'defaults' keys that were not in options
  */
 export function mergeOptions<T extends Object>(options: Partial<T>, defaults: T): T {
-    const ret: T = {...<any>(options || {})};
+    const ret: T = { ...<any>(options || {}) };
     for (const k of Object.keys(defaults)) {
         if (k in ret)
             continue;
@@ -263,11 +266,11 @@ export function hashCode(str: string) {
     if (str.length === 0)
         return hash;
     for (i = 0; i < str.length; i++) {
-        chr   = str.charCodeAt(i);
-// tslint:disable-next-line: no-bitwise
-        hash  = ((hash << 5) - hash) + chr;
-// tslint:disable-next-line: no-bitwise
+        chr = str.charCodeAt(i);
+        // tslint:disable-next-line: no-bitwise
+        hash = ((hash << 5) - hash) + chr;
+        // tslint:disable-next-line: no-bitwise
         hash |= 0; // Convert to 32bit integer
     }
     return hash;
-  };
+};
